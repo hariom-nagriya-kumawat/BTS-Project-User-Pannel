@@ -42,78 +42,15 @@ class Footer extends Component {
     return (
       <>
         {/* <!-- Start: Client Section --> */}
-        <section className="client-section">
-          {/* <!-- Container --> */}
-          <div className="container">
-            <div className="row">
-              {/* <!-- client list  --> */}
-              <div className="client_carousel" id="client_carousel">
-                <OwlCarousel className="owl-theme" {...options}>
-                  {/* <!-- client 1 --> */}
-                  <div className="item">
-                    <a href="#" className="client-box">
-                      <img alt="client" src="../images/client-1.png" />
-                      <h5>Cinnamon Stick</h5>
-                    </a>
-                  </div>
-                  {/* <!-- client 2 --> */}
-                  <div className="item">
-                    <a href="#" className="client-box">
-                      <img alt="client" src="../images/client-2.png" />
-                      <h5>Black Seeds </h5>
-                    </a>
-                  </div>
-                  {/* <!-- client 3 --> */}
-                  <div className="item">
-                    <a href="#" className="client-box">
-                      <img alt="client" src="../images/client-3.png" />
-                      <h5>Black Seeds </h5>
-                    </a>
-                  </div>
-                  {/* <!-- client 4 --> */}
-                  <div className="item">
-                    <a href="#" className="client-box">
-                      <img alt="client" src="../images/client-4.png" />
-                      <h5>Cinnamon Stick</h5>
-                    </a>
-                  </div>
-                  {/* <!-- client 5 --> */}
-                  <div className="item">
-                    <a href="#" className="client-box">
-                      <img alt="client" src="../images/client-1.png" />
-                      <h5>Cinnamon Stick</h5>
-                    </a>
-                  </div>
-                  {/* <!-- client 6 --> */}
-                  <div className="item">
-                    <a href="#" className="client-box">
-                      <img alt="client" src="../images/client-2.png" />
-                      <h5>Cinnamon Stick</h5>
-                    </a>
-                  </div>
-                  {/* <!-- client 7 --> */}
-                  <div className="item">
-                    <a href="#" className="client-box">
-                      <img alt="client" src="../images/client-3.png" />
-                      <h5>Cinnamon Stick</h5>
-                    </a>
-                  </div>
-                </OwlCarousel>
-              </div>
-              {/* <!--/ client list  --> */}
-            </div>
-            {/* <!--/ row - --> */}
-          </div>
-          {/* <!--/ Container - --> */}
-        </section>
+         
         {/* <!--   End:Client Section --> */}
 
         {/* <!-- Start:Footer Section --> */}
         <footer className="footer-section">
           <div className="container">
-            <div className="row">
+            <div className="row custom-footer">
               {/* <!-- Start: About --> */}
-              <div className="col-lg-3 col-md-6 col-sm-12">
+              <div className="footer-col footer-col-1">
                 <div className="widget">
                   <div className="footer_logo">
                     <img
@@ -124,11 +61,10 @@ class Footer extends Component {
                   </div>
                   <div className="footer_p">
                     <p className="footer_para">
-                      Loren ipsum dolor conse ctetur at adipis cing elit sed do
-                      eiu smod of tempor inci didunt know youlab{" "}
+                    Loren ipsum dolor conse ctetur at adipis cing elit sed do eiu smod of tempor inci didunt know youlab lorem ipsum dolor conse dummy text.{" "}
                     </p>
                   </div>
-                  <div className="footer_socil">
+                  <div className="footer_socil mt-3">
                     <ul className="list-icons link-list footer_soc">
                       <li>
                         <a href="#">
@@ -160,9 +96,35 @@ class Footer extends Component {
                 </div>
               </div>
               {/* <!-- End: About --> */}
+              
+              {/* <!-- Start: Quick Link --> */}
+              <div className="footer-col footer-col-2">
+                <div className="widget quick_lnk">
+                  <h5>Quick Link</h5>
+                  <ul>
+                    <li>
+                      <i className="fas fa-arrow-right"></i>
+                      <a href="#">Help and Ordering</a>
+                    </li>
+                    <li>
+                    <i className="fas fa-arrow-right"></i>
+                      <a href="#">Return & Cancellation</a>
+                    </li>
+                    <li>
+                    <i className="fas fa-arrow-right"></i>
+                      <a href="#">Online Organic Service</a>
+                    </li>
+                    <li>
+                    <i className="fas fa-arrow-right"></i>
+                      <a href="#">Delevery Schedule</a>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              {/* <!-- End: Quick Link --> */}
 
               {/* <!-- Start: Contact Info --> */}
-              <div className="col-lg-3 col-md-6 col-sm-12">
+              <div className="footer-col footer-col-3">
                 <div className="widget contact_info">
                   <h5>Contact Info</h5>
                   <ul>
@@ -187,30 +149,10 @@ class Footer extends Component {
               </div>
               {/* <!-- End: Contact Info --> */}
 
-              {/* <!-- Start: Quick Link --> */}
-              <div className="col-lg-3 col-md-6 col-sm-12">
-                <div className="widget quick_lnk">
-                  <h5>Quick Link</h5>
-                  <ul>
-                    <li>
-                      <a href="#">Help and Ordering</a>
-                    </li>
-                    <li>
-                      <a href="#">Return & Cancellation</a>
-                    </li>
-                    <li>
-                      <a href="#">Online Organic Service</a>
-                    </li>
-                    <li>
-                      <a href="#">Delevery Schedule</a>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-              {/* <!-- End: Quick Link --> */}
+              
 
               {/* <!-- Start:Newsletter --> */}
-              <div className="col-lg-3 col-md-6 col-sm-12">
+              <div className="footer-col footer-col-4">
                 <div className="widget">
                   <h5>Newsletter</h5>
                   {/* <!-- Start Subscribe --> */}
@@ -249,25 +191,26 @@ class Footer extends Component {
               {/* <!-- End: Newsletter --> */}
             </div>
             {/* <!-- End: row --> */}
-
-            {/* <!-- Start: Subfooter --> */}
-            <div className="subfooter_wrap">
-              <div className="subfooter">
-                <p>
-                  2021 © Copyright <a href="index.html">Tastery.</a> All rights
-                  Reserved.
-                </p>
-              </div>
-              <a href="#top" className="scrollup">
-                <i className="icon-glyph-266"></i>
-              </a>
-              {/* <!-- End:Subfooter --> */}
-            </div>
-            {/* <!-- End: Subfooter --> */}
           </div>
           {/* <!-- End: Container --> */}
         </footer>
         {/* <!-- End: Footer Section --> */}
+
+        {/* <!-- Start: Subfooter --> */}
+        <div className="subfooter_wrap">
+          <div className="container">
+            <div className="subfooter">
+              <p>
+                2021 © Copyright <a href="index.html">Tastery.</a> All rights
+                Reserved.
+              </p>
+            </div>
+            {/* <a href="#top" className="scrollup">
+              <i className="icon-glyph-266"></i>
+            </a> */}
+          </div>
+        </div>
+        {/* <!-- End: Subfooter --> */}
       </>
     );
   }

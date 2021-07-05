@@ -1,11 +1,28 @@
 import React, { Component } from "react";
 import { NavLink, Link } from "react-router-dom";
+import { getDayScheduleRequest, ListItemsActions, getUserRequest } from "../../actions";
+import { connect } from "react-redux";
 class Header extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      token: localStorage.getItem("token"),
+    };
+  }
+
+  componentDidMount() {
+    this.props.getCardDiscountData({ discount_type: "ONE_TIME_SUBSCRIBER" });
+    if (localStorage.getItem("token")) {
+      this.props.getUserData();
+    }
+  }
   render() {
+    const { DayScheduleReducerData, UserDetail } = this.props;
     return (
+
       <>
         {/* <!--::::::::::::::::::::::::::: Start: Preloader section :::::::::::::::::::::::::::--> */}
-        <div className="preloader">
+        {/* <div className="preloader">
           <div className="loader loader1"></div>
           <div className="loader loader2"></div>
           <div className="loader loader3"></div>
@@ -14,7 +31,7 @@ class Header extends Component {
           <div className="loader loader6"></div>
           <div className="loader loader7"></div>
           <div className="loader loader8"></div>
-        </div>
+        </div> */}
         {/* <!-- ::::::::::::::::::::::::::: End: Preloader section :::::::::::::::::::::::::::--> */}
 
         {/* <!-- Start: Header Section --> */}
@@ -40,62 +57,92 @@ class Header extends Component {
               <div className="header_top_left">
                 <div className="opening-hrs">
                   <p>
-                    <i className="fas fa-business-time"></i> Hours : 9am-5pm &
+                    <i className="fas fa-business-time" data-toggle="modal" data-target="#opening-hrs"></i> Hours : 9am-5pm &
                     9am-11pm
                   </p>
-                  <div className="opening-table-wrap">
-                    <table className="table opening-table">
-                      <thead>
-                        <tr>
-                          <th colspan="2">Evening Opening Time</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td> Sunday </td>
-                          <td>5pm-10:30pm</td>
-                        </tr>
-                        <tr>
-                          <td> Monday </td>
-                          <td>5pm-10:30pm</td>
-                        </tr>
-                        <tr>
-                          <td> Tuesday </td>
-                          <td>5pm-10:30pm</td>
-                        </tr>
-                        <tr>
-                          <td> Wednesday</td>
-                          <td>5pm-10:30pm</td>
-                        </tr>
-                        <tr>
-                          <td> Thusday </td>
-                          <td>5pm-10:30pm</td>
-                        </tr>
-                        <tr>
-                          <td> Friday </td>
-                          <td>5pm-11pm</td>
-                        </tr>
-                        <tr>
-                          <td> Statarday </td>
-                          <td>5pm-11pm</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                  {/* <!--  End: Opening Hrs Table --> */}
+
+                  <div
+                    className="modal fade cart-modal"
+                    id="opening-hrs"
+                    tabindex="-1"
+                    role="dialog"
+                    aria-labelledby="cartTableModal"
+                    aria-hidden="true"
+                  >
+                    <div className="modal-dialog" role="document">
+                      <div>
+
+                        <span className="close d-flex justify-content-end fas"
+                          data-dismiss="modal"
+                          aria-label="Close">
+                          <i class="fas fa-times text-success mr-3"></i>
+                        </span>
+                        <div className="modal-body">
+                          <div className="table-responsive">
+                            <table className="table table-sm table-bordered table-light table-dark">
+
+                              <thead>
+                                <tr>
+                                  <th>Days	</th>
+                                  <th>Day Opening Time	</th>
+                                  <th>Evening Opening Time</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {DayScheduleReducerData &&
+                                  DayScheduleReducerData.data &&
+                                  DayScheduleReducerData.data.length ? (
+                                  DayScheduleReducerData.data.map((itm, ind) => {
+                                    return (
+                                      <tr
+                                        key={ind}
+                                      >
+                                        <td>{itm.day && itm.day}</td>
+                                        <td>{itm.morning_time && itm.morning_time}</td>
+                                        <td>{itm.evening_time && itm.evening_time}</td>
+                                      </tr>
+                                    );
+                                  })
+                                ) : (
+                                  <tr>
+                                    <td colspan="4">
+                                      <h6>
+                                        {" "}
+                                        <i class="fas fa-exclamation-triangle text-danger mr-2" />
+                                        Not Found
+                                      </h6>
+                                    </td>
+                                  </tr>
+                                )}
+
+
+                              </tbody>
+                            </table>
+
+                          </div>
+                        </div>
+                      </div>
+                    </div></div>
                 </div>
                 {/* <!--  Endd: opening-hrs --> */}
 
                 <ul className="header_cart">
                   <li>
-                    <Link to="/login"> Login </Link>
+                    {
+                      UserDetail && UserDetail.data && UserDetail.data.name ?
+                        (
+                          <Link to="/profile" ><span className="firstLetter">  {UserDetail && UserDetail.data && UserDetail.data.name}</span></Link>)
+                        : (<Link to="/login"> Login </Link>
+                        )
+                    }
                   </li>
-                  <li>
+
+                  {/* comment murtaza <li>
                     <Link
                       to="/checkout"
                       className="icofont-cart-alt cart"
                     ></Link>
-                  </li>
+                  </li> */}
                 </ul>
                 {/* <!--  Endd: Header  Login & Cart --> */}
               </div>
@@ -110,8 +157,8 @@ class Header extends Component {
         {/* <!-- Start: header navigation --> */}
         <div className="navigation">
           <div className="container">
-            <div className="row">
-              <div className="logo col-md-3 col-sm-12">
+            <div className="row custom-header">
+              <div className="logo">
                 <Link to="/home">
                   <img
                     className="img-responsive"
@@ -122,7 +169,7 @@ class Header extends Component {
               </div>
               {/* <!-- end: logo --> */}
 
-              <div className="col-md-9 col-sm-12">
+              <div className="nav-outer">
                 <div id="navigation">
                   <ul>
                     <li>
@@ -132,10 +179,10 @@ class Header extends Component {
                       <NavLink exact to="/order" activeClassName="active">Orderr</NavLink>
                     </li>
                     <li>
-                      <NavLink exact to="/menu"activeClassName="active">Menus</NavLink>
+                      <NavLink exact to="/menu" activeClassName="active">Menus</NavLink>
                     </li>
                     <li className="has-sub">
-                      <NavLink  to="/pages" activeClassName="active">Pages</NavLink>
+                      <NavLink to="/pages" activeClassName="active">Pages</NavLink>
                       <ul>
                         <li>
                           <NavLink exact to="/pages/Merchandise" activeClassName="active">Merchandise</NavLink>
@@ -179,10 +226,28 @@ class Header extends Component {
           </div>
           {/* <!--/ container --> */}
         </div>
-        {/* <!-- End: header navigation --> */}
       </>
     );
   }
 }
 
-export default Header;
+const mapStateToProps = (state) => ({
+  DayScheduleReducerData: state.ScheduleReducer,
+  UserDetail: state.AuthReducer,
+});
+
+const mapDispatchToProps = (dispatch) => {
+  return {
+
+    getCardDiscountData: (data) => {
+      dispatch(getDayScheduleRequest(data));
+    },
+
+    getUserData: (data) => {
+      dispatch(getUserRequest(data));
+    },
+
+  };
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(Header);

@@ -51,6 +51,7 @@ const mapDispatchToProps = (dispatch) => {
     getFillterTypesData: (data) => {
       dispatch(getFilterTypeRequest(data));
     },
+    
     getCategoriesData: (data) => {
       dispatch(getCategoriesRequest(data));
     },

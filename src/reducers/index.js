@@ -5,6 +5,10 @@ import {FoodTypeReducer} from "./Menu/Foodtype";
 import {FillterReducer} from "./Menu/Fillter";
 import{CategorieReducer} from "./Menu/Category";
 import {ItemsReducer} from "./Menu/Items";
+import {ScheduleReducer} from "./Checkout/DaySchedule";
+import {OptionsReducer} from "./Menu/Options";
+import {CartReducer} from "./Checkout/Cart";
+import {CheckOutReducer} from "./Checkout/Order";
 import { handleActions } from "redux-actions";
 
 export const mainReducer = handleActions(
@@ -28,6 +32,10 @@ const AppReducer = combineReducers({
   FillterReducer,
   CategorieReducer,
   ItemsReducer,
+  ScheduleReducer,
+  OptionsReducer,
+  CartReducer,
+  CheckOutReducer,
   routing: routerReducer,
 });
 

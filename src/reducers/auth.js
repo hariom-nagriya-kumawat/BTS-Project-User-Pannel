@@ -3,11 +3,16 @@ import { authActions } from "../actions";
 
 const initialState = {
   token: null,
-  isLoginSuccess:false
+  isLoginSuccess:false,
+  data:[]
 };
 
 export const AuthReducer = handleActions(
   {
+    [authActions.GET_USER_SUCCESS]: (state, { payload }) => ({
+      ...state,
+      ...payload,
+    }),
     [authActions.LOGIN_SUCCESS]: (state, { payload }) => ({
       ...state,
       ...payload,

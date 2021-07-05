@@ -2,8 +2,8 @@ import { toast } from "react-toastify";
 import { createLogic } from "redux-logic";
 import { ApiHelper } from "../Helpers/ApiHelper";
 import { logger } from "../Helpers/Logger";
-// import { DefaultErrorMessage } from "../config/Constants";
-import { authActions, loginSuccess, showLoader, hideLoader } from "../actions";
+ import { DefaultErrorMessage } from "../config/Error";
+import { authActions, loginSuccess, showLoader, hideLoader, getUserSuccess } from "../actions";
 let toastId = null;
 
 /**
@@ -32,7 +32,9 @@ const loginLogic = createLogic({
       return;
     } else {
       logger(result);
-      localStorage.setItem("token", result.data.token);
+      localStorage.setItem("token", result.data.token)
+      localStorage.setItem("userId", result.data._id);
+      toast.success("Login Successfully.")
       dispatch(
         loginSuccess({ token: result.data.token, isLoginSuccess: true })
       );
@@ -50,7 +52,7 @@ const signUpLogic = createLogic({
     let api = new ApiHelper();
     let result = await api.FetchFromServer(
       "",
-      "/sign-in",
+      "/sign-up",
       "POST",
       false,
       undefined,
@@ -70,6 +72,81 @@ const signUpLogic = createLogic({
     }
   },
 });
+const getUserLogic = createLogic({
+  type: authActions.GET_USER_REQUEST,
+  cancelType: authActions.GET_USER_FAILED,
+  async process({ action }, dispatch, done) {
+    dispatch(getUserSuccess({ isLoading: false }));
+    dispatch(({ isLoginSuccess: true }));
+    let api = new ApiHelper();
+    let result = await api.FetchFromServer(
+      "",
+      "/user",
+      "GET",
+      true,
+      undefined,
+      undefined
+    );
+    if (result.isError) {
+      if (!toast.isActive(toastId)) {
+        toastId = toast.error(result.messages[0] || DefaultErrorMessage);
+      }
+      dispatch(getUserSuccess({ isLoading: false }));
+      done();
+      return;
+    } else {
+      logger(result);
+      dispatch(
+        getUserSuccess({
+          data: result.data,
+          isLoading: false,
+        })
+      );
+      done();
+      return;
+    }
+  },
+});
+
+const updateUserLogic = createLogic({
+  type: authActions.UPDATE_USER_REQUEST,
+  cancelType: authActions.UPDATE_USER_FAILED,
+  async process({ action, getState }, dispatch, done) {
+    dispatch(getUserSuccess({ updateReq: "Start" }));
+    let userId = action.payload.user_id;
+    delete(action.payload.user_id);
+    let data =
+      getState().AuthReducer && getState().AuthReducer.data
+        ? getState().AuthReducer.data
+        : [];
+    let api = new ApiHelper();
+    let result = await api.FetchFromServer(
+      "",
+      "/user",
+      "PUT",
+      true,
+      undefined,
+      action.payload
+    );
+    if (result.isError) {
+      if (!toast.isActive(toastId)) {
+        toastId = toast.error(result.messages[0] || DefaultErrorMessage);
+      }
+      done();
+      return;
+    } else {
+      logger(result);
+
+      let index = data.findIndex((item) => item._id === userId);
+      data[index] = result.data;
+      dispatch(
+        getUserSuccess({ data: data, isLoading: false, updateReq: "End" })
+      );
+      done();
+      return;
+    }
+  },
+});
 
 
-export const AuthLogic = [loginLogic,signUpLogic];
+export const AuthLogic = [loginLogic, signUpLogic, getUserLogic, updateUserLogic];

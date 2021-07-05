@@ -2,7 +2,7 @@ html {
   --Bg1: #19c133;
   --Bg2: #000;
   --Text1: white;
-  --error:#dc3545;
+  --error: #dc3545;
 }
 .bg1 {
   background-color: var(--Bg1);
@@ -34,10 +34,91 @@ a {
   background: var(--Bg1) !important;
   color: var(--Text1);
 }
-#css_custom_input{
+#css_custom_input {
   border: none !important;
 }
 
-#css_custom_input::after{
+#css_custom_input::after {
   border: none !important;
+}
+.modal.show .modal-dialog {
+  margin-top: 150px !important;
+}
+.text-success {
+  color: #19c133 !important;
+}
+.fa-times {
+  font-size: small !important;
+  color: #19c133;
+  cursor: pointer;
+}
+.fas {
+  cursor: pointer !important;
+}
+.table {
+  text-transform: capitalize !important;
+  font-weight: 400 !important;
+  align-items: center !important;
+}
+.table-dark {
+  background-color: var(--Bg2);
+  color: var(--Text1);
+  font-size: 14px !important;
+  align-items: center !important;
+  text-align: center;
+}
+.firstLetter {
+  text-transform: capitalize;
+}
+.card-tab {
+  /* background-color: #f6f8fa !important; */
+  padding: 2px !important;
+  margin-top: 20px;
+}
+.bg-light{
+  border-color: #19c133;
+  color: #000;
+  text-transform: capitalize;
+}
+.option_ul{
+  padding: 0;
+  margin: 0;
+}
+.option_li{
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  border-bottom: 1px solid #ccc;
+  padding: 6px 0;
+}
+.option_p{
+  margin-bottom: 0;
+  text-transform: capitalize;
+  width: 50%;
+}
+.option_span{
+  color: #19c133 !important;
+  width: 100px !important;
+  text-align: left !important;
+  font-weight: 500 !important;
+}
+
+.option_button{
+  border: unset;
+  background-color: #19c133 !important;
+  color: #fff !important;
+  font-size: 13px !important;
+  border-radius: 4px !important;
+  padding: 3px 8px !important;
+}
+.card-link{
+  cursor: pointer;
+}
+.option_button[disabled], html input[disabled]{
+  background-color: #cccc !important;
+  color: #000 !important;
+}
+.icofont-ui{
+  cursor: pointer;
 }

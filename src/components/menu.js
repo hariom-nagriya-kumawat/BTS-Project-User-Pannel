@@ -28,7 +28,7 @@ class MenuComponent extends Component {
     this.props.getItem({ [name]: Id });
   }
   render() {
-    const { FoodTypeData, FillterTypeData, CategorieReducerData, ItemsData } = this.props;
+    const { FoodTypeData, FillterTypeData, CategorieReducerData, ItemsData ,OptionData} = this.props;
     const { category_id, CollapseName, filter_type_id } = this.state;
     return (
       <>

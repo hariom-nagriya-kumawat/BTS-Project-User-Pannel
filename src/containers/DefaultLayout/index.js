@@ -18,7 +18,7 @@ import Review from "../Review";
 import Contact from "../Contact";
 import Login from "../Login";
 import Checkout from "../Checkout";
-
+import Profile from "../Profile";
 class DefaultLayout extends Component {
   render() {
     return (
@@ -100,6 +100,11 @@ class DefaultLayout extends Component {
               exact
               path="/about"
               render={(props) => <About {...props} {...this.props} />}
+            />
+            <Route
+              exact
+              path="/profile"
+              render={(props) => <Profile {...props} {...this.props} />}
             />
             <Redirect from="/" to="/home" />
           </Switch>
