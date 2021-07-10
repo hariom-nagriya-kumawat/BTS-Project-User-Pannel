@@ -1,519 +1,974 @@
 import React, { Component } from "react";
-
+import Login from "./checkoutauth/Login";
+import SignUp from "./checkoutauth/SignUp";
+import PaymentCard from "./checkoutauth/PaymentCard";
+import { Collapse, Row, Col, Card } from "react-bootstrap";
+import { toast } from "react-toastify";
+import Validator from "js-object-validation";
 class CheckoutComponent extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      order_type: "",
+      time: "",
+      service_charge: 0,
+      delivery_charge: 0,
+      sub_total: 0,
+      grand_total: 0,
+      address: "",
+      city: "",
+      postCode: "",
+      items: [],
+      mobile: "",
+      post_code: 0,
+      discount: 0,
+      showAddress: false,
+      card_type: "",
+      card_code: "",
+      tipPercent: 0,
+      tips: 0,
+      bagqty: 0,
+      bagPrice: 0,
+    };
+  }
+  componentDidMount() {
+    let checkoutItems = localStorage.getItem("viewCheckoutData");
+    let checkoutData = checkoutItems ? JSON.parse(checkoutItems) : [];
+    if (!checkoutData || !checkoutData.length) {
+      return this.props.history.push("/order");
+    }
+    const { AuthReducer } = this.props;
+    const { data } = AuthReducer;
+    const { contact_number, address_details } = data;
+    let total = 0;
+    let items = [];
+    if (localStorage.getItem("token") && data) {
+      this.setState({
+        mobile: contact_number ? contact_number : "",
+        city:
+          address_details && address_details.city ? address_details.city : "",
+        address:
+          address_details && address_details.address
+            ? address_details.address
+            : "",
+        postCode:
+          address_details && address_details.zipcode
+            ? address_details.zipcode
+            : "",
+      });
+    }
+    if (checkoutData && checkoutData.length) {
+      checkoutData.map((item) => {
+        total =
+          total +
+          (item.item && item.item.online_price ? item.item.online_price : 0);
+        items.push({
+          id: item.item_id ? item.item_id : "",
+          quantity: item.quantity ? item.quantity : 0,
+          price:
+            item.item && item.item.online_price ? item.item.online_price : 0,
+          name: item.item && item.item.name ? item.item.name : 0,
+        });
+        return true;
+      });
+    }
+    total = parseFloat(total).toFixed(2);
+    this.setState({
+      items: items && items.length ? items : [],
+      sub_total: parseFloat(total).toFixed(2),
+      grand_total: parseFloat(total).toFixed(2),
+    });
+  }
+  componentDidUpdate = ({ AuthReducer, ChargesData, DayScheduleData }) => {
+    if (
+      AuthReducer &&
+      AuthReducer.data &&
+      AuthReducer.data !== this.props.AuthReducer.data
+    ) {
+      const { AuthReducer } = this.props;
+      const { data } = AuthReducer;
+      const { contact_number, address_details } = data;
+      if (localStorage.getItem("token") && data) {
+        this.setState({
+          mobile: contact_number ? contact_number : "",
+          city:
+            address_details && address_details.city ? address_details.city : "",
+          address:
+            address_details && address_details.address
+              ? address_details.address
+              : "",
+          postCode:
+            address_details && address_details.zipcode
+              ? address_details.zipcode
+              : "",
+        });
+      }
+    }
+    if (
+      ChargesData &&
+      ChargesData.deliveryData &&
+      ChargesData.deliveryData !== this.props.ChargesData.deliveryData
+    ) {
+      const { sub_total, order_type, service_charge } = this.state;
+      const { ChargesData } = this.props;
+      const { deliveryData } = ChargesData;
+      let delivery_charge = 0;
+      let grand_total = parseFloat(sub_total).toFixed(0);
+      if (deliveryData && deliveryData.length && sub_total) {
+        let dCharge = deliveryData.filter(
+          (item) =>
+            item.min_order_value <= sub_total &&
+            item.max_order_value >= sub_total
+        )[0];
+        delivery_charge = parseFloat(
+          dCharge && dCharge.tax ? dCharge.tax : 0
+        ).toFixed(2);
+        grand_total =
+          Math.round(
+            (parseFloat(sub_total) +
+              parseFloat(order_type === "DELIVERY" ? delivery_charge : 0) +
+              parseFloat(service_charge)) *
+              100
+          ) / 100;
+      } else {
+        delivery_charge = 0;
+        grand_total =
+          Math.round(
+            (parseFloat(sub_total) +
+              parseFloat(order_type === "DELIVERY" ? delivery_charge : 0) +
+              parseFloat(service_charge)) *
+              100
+          ) / 100;
+      }
+      this.setState({
+        delivery_charge: parseFloat(delivery_charge).toFixed(2),
+        grand_total: parseFloat(grand_total).toFixed(2),
+      });
+    }
+    if (
+      ChargesData &&
+      ChargesData.servicedata &&
+      ChargesData.servicedata !== this.props.ChargesData.servicedata
+    ) {
+      const { sub_total, order_type, delivery_charge } = this.state;
+      const { ChargesData } = this.props;
+      const { servicedata } = ChargesData;
+      let service_charge = 0;
+      let grand_total = 0;
+      grand_total = parseFloat(sub_total).toFixed(0);
+      if (servicedata && servicedata.length && sub_total) {
+        let sCharge = servicedata.filter(
+          (item) => item.min_order_value <= sub_total
+        );
+        if (sCharge && sCharge.length) {
+          service_charge = parseFloat(
+            sCharge[sCharge.length - 1].tax
+              ? sCharge[sCharge.length - 1].tax
+              : 0
+          );
+          grand_total =
+            Math.round(
+              (parseFloat(grand_total) +
+                parseFloat(service_charge) +
+                parseFloat(order_type === "DELIVERY" ? delivery_charge : 0)) *
+                100
+            ) / 100;
+        } else {
+          service_charge = 0;
+          grand_total =
+            Math.round(
+              (parseFloat(grand_total) +
+                parseFloat(service_charge) +
+                parseFloat(order_type === "DELIVERY" ? delivery_charge : 0)) *
+                100
+            ) / 100;
+        }
+      } else {
+        service_charge = 0;
+        grand_total =
+          Math.round(
+            (parseFloat(grand_total) +
+              parseFloat(service_charge) +
+              parseFloat(order_type === "DELIVERY" ? delivery_charge : 0)) *
+              100
+          ) / 100;
+      }
+      this.setState({
+        delivery_charge: parseFloat(delivery_charge).toFixed(2),
+        service_charge: parseFloat(service_charge).toFixed(2),
+        grand_total: parseFloat(grand_total).toFixed(2),
+      });
+    }
+    if (
+      DayScheduleData &&
+      DayScheduleData.data &&
+      DayScheduleData.data !== this.props.DayScheduleData.data
+    ) {
+      if (this.props.DayScheduleData.data) {
+        this.onScheduleTime();
+      }
+    }
+  };
+  onScheduleTime = () => {
+    const { DayScheduleData } = this.props;
+    const { data } = DayScheduleData;
+    let dayName = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thusday",
+      "Friday",
+      "Saterday",
+    ];
+    let date = new Date();
+    let day = date.getDay();
+    let toDayData = data.filter((item) => item.day === dayName[day])[0];
+    console.log("toDayData", toDayData);
+  };
+  handleChange = (e) => {
+    const {
+      sub_total,
+      delivery_charge,
+      discount,
+      service_charge,
+      order_type,
+      tips,
+      tipPercent,
+      bagPrice,
+    } = this.state;
+    const { target } = e;
+    const { value, name } = target;
+    if (name === "tips") {
+      this.setState({ tipPercent: 0 });
+    }
+    if ((name === "postCode" || name === "tips") && isNaN(value)) return true;
+    this.setState({
+      [name]: value,
+      errors: {
+        ...this.state.errors,
+        [name]: false,
+      },
+    });
+    if (name === "tips") {
+      this.setState({
+        grand_total:
+          Math.round(
+            (parseFloat(sub_total) +
+              parseFloat(order_type === "DELIVERY" ? delivery_charge : 0) +
+              parseFloat(service_charge) +
+              parseFloat(bagPrice) +
+              parseFloat(value ? value : 0) -
+              parseFloat(discount)) *
+              100
+          ) / 100,
+      });
+    }
+    if (name === "order_type") {
+      this.setState({
+        grand_total:
+          Math.round(
+            (parseFloat(sub_total) +
+              parseFloat(value === "DELIVERY" ? delivery_charge : 0) +
+              parseFloat(service_charge) +
+              parseFloat(bagPrice) +
+              parseFloat(tips && tips > 0 ? tips : tipPercent) -
+              parseFloat(discount)) *
+              100
+          ) / 100,
+      });
+    }
+  };
+  onPlaceOrder = (data, status) => {
+    const {
+      items,
+      order_type,
+      time,
+      postCode,
+      address,
+      city,
+      delivery_charge,
+      service_charge,
+      card_type,
+      mobile,
+      card_code,
+      tips,
+      discount,
+      tipPercent,
+      sub_total,
+    } = this.state;
+    const data1 = {
+      order_type,
+      time,
+      postCode: order_type === "DELIVERY" ? postCode : "test",
+      address: order_type === "DELIVERY" ? address : "test",
+      city: order_type === "DELIVERY" ? city : "test",
+      delivery_charge,
+      service_charge,
+      card_type,
+      mobile: order_type === "DELIVERY" ? mobile : "test",
+      card_code,
+      tips,
+      discount,
+      tipPercent,
+    };
+    let json = {
+      item_details: items && items.length ? items : [],
+      order_type: order_type,
+      time: time,
+      address: {
+        mobile: mobile,
+        post_code: postCode,
+        address: [address, " , ", city].join(""),
+      },
+      discount: {
+        type: card_type,
+        code: card_code,
+        amount: discount,
+      },
+      tips: tips && tips > 0 ? tips : tipPercent,
+      bags: 25,
+      service_charge: service_charge,
+      delivery_charge: delivery_charge,
+      ...data,
+    };
+    const validations = {
+      order_type: {
+        required: true,
+      },
+      time: {
+        required: true,
+      },
+      mobile: {
+        required: true,
+      },
+      post_code: {
+        required: true,
+      },
+      address: {
+        required: true,
+      },
+      city: {
+        required: true,
+      },
+      sub_total: {
+        required: true,
+      },
+      items: {
+        required: true,
+      },
+    };
+    const messages = {
+      order_type: {
+        required: "Please select order type.",
+      },
+      time: {
+        required: "Please select time",
+      },
+      mobile: {
+        required: "Please enter contact number",
+      },
+      post_code: {
+        required: "Please enter post code",
+      },
+      address: {
+        required: "Please enter address",
+      },
+      city: {
+        required: "Please enter city",
+      },
+      items: {
+        required: "Please select item",
+      },
+    };
+    const { isValid, errors } = Validator(data1, validations, messages);
+    if (!isValid || !status) {
+      this.setState({ errors: errors ? errors : {} });
+    } else {
+      this.props.onPlaceOrder(json);
+    }
+  };
+  handleChangeCardType = (e) => {
+    const { target } = e;
+    const { name, value } = target;
+    this.setState({ [name]: value });
+    this.props.onGetDiscountCardData({ card_type: value });
+  };
+  onQuantityBags = (e) => {
+    const { CheckoutServiceReducerData } = this.props;
+    const { BegData } = CheckoutServiceReducerData;
+    const {
+      order_type,
+      discount,
+      sub_total,
+      delivery_charge,
+      service_charge,
+      tips,
+      tipPercent,
+    } = this.state;
+    const { target } = e;
+    const { value, name } = target;
+    this.setState({
+      [name]: value,
+      grand_total:
+        Math.round(
+          (parseFloat(sub_total) +
+            parseFloat(order_type === "DELIVERY" ? delivery_charge : 0) +
+            parseFloat(service_charge) +
+            parseFloat(
+              value * (BegData && BegData.length ? BegData[0].value : 0)
+            ) +
+            parseFloat(tips && tips > 0 ? tips : tipPercent) -
+            parseFloat(discount)) *
+            100
+        ) / 100,
+      bagPrice: parseFloat(
+        value * (BegData && BegData.length ? BegData[0].value : 0)
+      ).toFixed(2),
+    });
+  };
+  onApplyCode = () => {
+    const {
+      card_code,
+      sub_total,
+      delivery_charge,
+      tips,
+      tipPercent,
+      order_type,
+      service_charge,
+      bagPrice,
+    } = this.state;
+    const { DiscountData } = this.props;
+    const { data } = DiscountData;
+    let grand_total = parseFloat(sub_total).toFixed(2);
+    if (data.length) {
+      let result = data.filter(
+        (item) => item.code === card_code && item.min_order_value <= sub_total
+      );
+      if (!result.length) {
+        toast.error("Please enter valid code");
+        grand_total =
+          Math.round(
+            (parseFloat(grand_total) +
+              parseFloat(tips && tips > 0 ? tips : tipPercent) +
+              parseFloat(service_charge) +
+              parseFloat(bagPrice) +
+              parseFloat(order_type === "DELIVERY" ? delivery_charge : 0) -
+              parseFloat(0)) *
+              100
+          ) / 100;
+        this.setState({ discount: 0, grand_total: grand_total });
+      } else {
+        toast.success("Code appliyed successfully.");
+        grand_total =
+          Math.round(
+            (parseFloat(grand_total) +
+              parseFloat(tips && tips > 0 ? tips : tipPercent) +
+              parseFloat(service_charge) +
+              parseFloat(bagPrice) +
+              parseFloat(order_type === "DELIVERY" ? delivery_charge : 0) -
+              parseFloat(result[0].discount)) *
+              100
+          ) / 100;
+        this.setState({
+          discount: parseFloat(result[0].discount).toFixed(2),
+          grand_total: grand_total,
+        });
+      }
+    }
+  };
   render() {
+    let token = localStorage.getItem("token");
+    const {
+      order_type,
+      time,
+      postCode,
+      address,
+      city,
+      sub_total,
+      delivery_charge,
+      service_charge,
+      items,
+      showAddress,
+      card_type,
+      mobile,
+      card_code,
+      tips,
+      bagqty,
+      bagPrice,
+      discount,
+      grand_total,
+    } = this.state;
+    const { CheckoutServiceReducerData } = this.props;
+    let showTip =
+      CheckoutServiceReducerData &&
+      CheckoutServiceReducerData.TipData[0] &&
+      CheckoutServiceReducerData.TipData[0].is_deleted &&
+      CheckoutServiceReducerData.TipData[0].is_deleted;
+    let showBag =
+      CheckoutServiceReducerData &&
+      CheckoutServiceReducerData.BegData[0] &&
+      CheckoutServiceReducerData.BegData[0].is_deleted &&
+      CheckoutServiceReducerData.BegData[0].is_deleted;
     return (
       <>
-        {/* <!-- header --> */}
-        <header id="page-top" className="single-banner">
-          {/* <!-- Start: Header Content --> */}
+        <div className="single-banner">
+          <ul>
+            <li>
+              <a href="/home">Home</a>
+            </li>
+            <li className="ative">Checkout</li>
+          </ul>
+        </div>
+
+        <div className="checkout-outer">
           <div className="container">
-            <div className="row banner-text">
-              <div className="col-sm-12">
-                {/* <!-- Headline Goes Here --> */}
-                <h3>Checkout</h3>
-                <p>
-                  <a href="index.html"> Home </a>{" "}
-                  <i className="icofont-rounded-right"></i> Checkout{" "}
-                </p>
-              </div>
-            </div>
-            {/* <!-- End: .row --> */}
-          </div>
-          {/* <!-- End: Header Content --> */}
-        </header>
-        {/* <!--/. header --> */}
+            <div className={!token ? "checkout-inner" : "checkout-inner login_user"}>
+              {!token ? (
+                <div className="checkout-col">
+                  <ul className="nav nav-tabs">
+                    <li className="nav-item">
+                      <a className="nav-link active" data-toggle="tab" href="#home">
+                        Login
+                      </a>
+                    </li>
+                    <li className="nav-item">
+                      <a className="nav-link" data-toggle="tab" href="#menu1">
+                        Sign Up
+                      </a>
+                    </li>
+                    <li className="nav-item">
+                      <a className="nav-link" data-toggle="tab" href="#menu2">
+                        Guest Login
+                      </a>
+                    </li>
+                  </ul>
 
-        {/* <!-- Start: Contact Section --> */}
-        <section className="checkout-section">
-          <div className="container">
-            <div className="row">
-              {/* <!-- Start: Col 1 - --> */}
-              <div className="col-lg-4 col-sm-12">
-                <div className="sign_checkout">
-                  <div className="card-header">
-                    <a
-                      className="card-link"
-                      data-toggle="collapse"
-                      href="#customerCollapse"
-                    >
-                      1. Customer Information <i className="icofont-thin-down"></i>
-                    </a>
-                  </div>
-                  <div
-                    id="customerCollapse"
-                    className="collapse show"
-                    data-parent="#accordion"
-                  >
-                    <form method="post">
-                      <div className="row">
-                        <div className="col-sm-12">
-                          <input
-                            className="con-field"
-                            name="uname"
-                            id="uname"
-                            type="text"
-                            placeholder="User Name"
-                          />
-                        </div>
-                        <div className="col-sm-12">
-                          <input
-                            className="con-field"
-                            name="password"
-                            id="cipassword"
-                            type="text"
-                            placeholder="Password"
-                          />
-                        </div>
-                        <div className="col-sm-12">
-                          <input type="submit" className="submit" value="Login" />
-                        </div>
-                        <div className="col-sm-12">
-                          <a href="#" className="forget_pass">
-                            {" "}
-                            Forgot Password ?
-                          </a>
-                        </div>
-                      </div>
-                    </form>
+                  <div className="tab-content">
+                    <div className="tab-pane container active" id="home">
+                      <Login />
+                    </div>
+                    <div className="tab-pane container fade" id="menu1">
+                      <SignUp />
+                    </div>
+                    <div className="tab-pane container fade" id="menu2">
+                      ...
+                    </div>
                   </div>
                 </div>
-                {/* <!-- End: Sign in - --> */}
+              ) : null}
 
-                {/* <!-- Start: Sign up - --> */}
-                <div className="signup_checkout">
-                  <div className="card-header">
-                    <a
-                      className="card-link"
-                      data-toggle="collapse"
-                      href="#signupCollapse"
-                    >
-                      New Customer Sign Up <i className="icofont-thin-down"></i>
-                    </a>
-                  </div>
-                  <div
-                    id="signupCollapse"
-                    className="collapse show"
-                    data-parent="#accordion"
-                  >
-                    <form method="post">
-                      <div className="row">
-                        <div className="col-sm-12">
-                          <input
-                            className="con-field"
-                            name="name"
-                            id="name"
-                            type="text"
-                            placeholder="Name"
-                          />
+              <div className="checkout-col checkout-col-sec ">
+                <div className="checkout-heading">
+                  <h3>2. Order Details</h3>
+                </div>
+                <div className="checkout-content">
+                  <div className="checkout-content-col">
+                    <div className="checkout-option">
+                      <div className="card">
+                        <div className="card-header">
+                          <a>Order Type</a>
                         </div>
-                        <div className="col-sm-12">
-                          <input
-                            className="con-field"
-                            name="email"
-                            id="email"
-                            type="text"
-                            placeholder="Email"
-                          />
-                        </div>
-                        <div className="col-sm-12">
-                          <input
-                            className="con-field"
-                            name="password"
-                            id="ncpassword"
-                            type="text"
-                            placeholder="Password"
-                          />
-                        </div>
-                        <div className="col-sm-12">
-                          <input
-                            className="con-field"
-                            name="cpassword"
-                            id="cpassword"
-                            type="text"
-                            placeholder="Confirm Password"
-                          />
-                        </div>
-                        <div className="col-sm-12">
-                          <input
-                            className="con-field"
-                            name="pnumber"
-                            id="pnumber"
-                            type="text"
-                            placeholder="Mobile Number"
-                          />
-                        </div>
-                        <div className="col-sm-12">
-                          <input
-                            className="con-field"
-                            name="pcode"
-                            id="ncpcode"
-                            type="text"
-                            placeholder="Post Code"
-                          />
-                        </div>
-                        <div className="col-sm-12">
-                          <input
-                            className="con-field"
-                            name="saddress"
-                            id="saddress"
-                            type="text"
-                            placeholder="Street Address"
-                          />
-                        </div>
-                        <div className="col-sm-12">
-                          <div className="select-group">
-                            <select name="total_review">
-                              <option value="0"> Select Address </option>
-                              <option value="1">1 Address</option>
-                              <option value="2">2 Address</option>
-                              <option value="3">3 Address</option>
+                        <div className="collapse show">
+                          <div className="card-body">
+                            <select
+                              onChange={(e) => {
+                                this.handleChange(e);
+                              }}
+                              value={order_type}
+                              name="order_type"
+                            >
+                              <option value={null}>Select</option>
+                              <option value="DELIVERY">Delivery</option>
+                              <option value="COLLECTION">Collection</option>
                             </select>
                           </div>
                         </div>
-                        <div className="col-sm-12">
-                          <input
-                            className="con-field"
-                            name="city"
-                            id="city"
-                            type="text"
-                            placeholder="City / Town"
-                          />
-                        </div>
-                        <div className="col-sm-12">
-                          <div className="term-and-condition">
-                            <input type="checkbox" id="term" />
-                            <label for="term">
-                              I agree to <a href="#">term &amp; condition</a>{" "}
-                              and <a href="#">privacy policy</a>
-                            </label>
-                          </div>
-                        </div>
-                        <div className="col-sm-12">
-                          <input type="submit" className="submit" value="Sign Up" />
-                        </div>
                       </div>
-                    </form>
-                  </div>
-                </div>
-                {/* <!-- End: Sign up - --> */}
-              </div>
-              {/* <!-- End: Col 1   /- --> */}
-
-              {/* <!-- Start: Col 2 - --> */}
-              <div className="col-lg-4 col-sm-12">
-                <div className="order_details">
-                  <div className="card-header">
-                    <a
-                      className="card-link"
-                      data-toggle="collapse"
-                      href="#orderCollapse"
-                    >
-                      2. Order Details <i className="icofont-thin-down"></i>
-                    </a>
-                  </div>
-                  <div
-                    id="orderCollapse"
-                    className="collapse show"
-                    data-parent="#accordion"
-                  >
-                    <form method="post">
-                      <div className="row">
-                        <div className="col-sm-12">
-                          <div className="select-group">
-                            <select name="total_review">
-                              <option value="0"> Select Order Type </option>
-                              <option value="1">1 Address</option>
-                              <option value="2">2 Address</option>
-                              <option value="3">3 Address</option>
+                    </div>
+                    <div className="checkout-option">
+                      <div className="card">
+                        <div className="card-header">
+                          <a>Collection Time{" "}</a>
+                        </div>
+                        <div className="collapse show">
+                          <div className="card-body">
+                            <select
+                              onChange={(e) => {
+                                this.handleChange(e);
+                              }}
+                              value={time}
+                              name="time"
+                            >
+                              <option value={null}>Select</option>
+                              <option value="4:30pm">4:30</option>
+                              <option value="4:45pm">4:45</option>
+                              <option value="5:00pm">5:00</option>
+                              <option value="5:30pm">5:30</option>
                             </select>
                           </div>
                         </div>
-                        <div className="col-sm-12">
-                          <div className="select-group">
-                            <select name="total_review">
-                              <option value="0"> Select Delivery Time </option>
-                              <option value="1">1 Address</option>
-                              <option value="2">2 Address</option>
-                              <option value="3">3 Address</option>
-                            </select>
-                          </div>
-                        </div>
-
-                        <div className="user_deatils_wrap">
-                          <a
-                            className="user_deatils_btn"
-                            data-toggle="collapse"
-                            href="#userDetails"
-                            role="button"
-                            aria-expanded="false"
-                            aria-controls="userDetails"
-                          >
-                            Details
-                          </a>
-                          <div className="user_deatils collapse" id="userDetails">
-                            <div className="col-sm-12">
-                              <input
-                                className="con-field"
-                                name="Name"
-                                id="Name"
-                                type="text"
-                                placeholder="Name"
-                              />
-                            </div>
-                            <div className="col-sm-12">
-                              <input
-                                className="con-field"
-                                name="mobile"
-                                id="mobile"
-                                type="text"
-                                placeholder="Mobile"
-                              />
-                            </div>
-                            <div className="col-sm-12">
-                              <input
-                                className="con-field"
-                                name="pcode"
-                                id="pcode"
-                                type="text"
-                                placeholder="Post Code"
-                              />
-                            </div>
-                            <div className="col-sm-12">
-                              <input
-                                className="con-field"
-                                name="address"
-                                id="address"
-                                type="text"
-                                placeholder="Address"
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="order_coupon">
-                          <div className="col-sm-12">
-                            <div className="select-group">
-                              <select name="coupon">
-                                <option value="0">
-                                  {" "}
-                                  Select Coupon or Loyalty{" "}
-                                </option>
-                                <option value="1"> Coupon Code</option>
-                                <option value="2"> Loyalty Card </option>
-                              </select>
-                            </div>
-                          </div>
-                          <div className="col-sm-12 coupon_field">
-                            <input
-                              className="con-field"
-                              name="coupon"
-                              id="coupon"
-                              type="text"
-                              placeholder="Apply Coupon"
-                            />
-                            <input type="submit" className="submit" value="Apply" />
-                          </div>
-                        </div>
-
-                        <div className="col-sm-12 order_giftcard">
-                          <input
-                            className="con-field"
-                            name="gift"
-                            id="gift"
-                            type="text"
-                            placeholder="Apply Gift Card"
-                          />
-                          <input type="submit" className="submit" value="Apply" />
-                        </div>
-
-                        <div className="col-sm-12 order_tips">
-                          <input
-                            className="con-field"
-                            name="tips"
-                            id="tips"
-                            type="text"
-                            placeholder="Tips"
-                          />
-                          <input type="submit" className="submit" value="Send" />
-                        </div>
-
-                        <div className="col-sm-12 order_donation">
-                          <input
-                            className="con-field"
-                            name="donation"
-                            id="donation"
-                            type="text"
-                            placeholder="Donation"
-                          />
-                          <input type="submit" className="submit" value="Send" />
-                        </div>
-                        <div className="col-sm-12 order_notes">
-                          <textarea
-                            className="con-field"
-                            name="notes"
-                            id="notes"
-                            placeholder="Notes"
-                          >
-                            {" "}
-                          </textarea>
-                        </div>
-
-                        <div className="col-sm-12">
-                          <div className="order_total">
-                            <div className="price">
-                              <h3> Total</h3> <span> £ 0.00 </span>
-                            </div>
-                            <table className="table table-bordered">
-                              <tbody>
-                                <tr>
-                                  <th>Qty</th>
-                                  <th>Description</th>
-                                  <th>Price</th>
-                                </tr>
-                                <tr>
-                                  <td>1</td>
-                                  <td>222</td>
-                                  <td>333</td>
-                                </tr>
-
-                                <tr>
-                                  <td></td>
-                                  <td>
-                                    <b>Sub Total:</b>
-                                  </td>
-                                  <td>
-                                    <b>£ 0.00</b>
-                                  </td>
-                                </tr>
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      </div>
-                    </form>
-                  </div>
-                </div>
-                {/* <!-- End: Order Details - --> */}
-              </div>
-              {/* <!-- End: Col 2   /- --> */}
-
-              {/* <!-- Start: Col 3- --> */}
-              <div className="col-lg-4 col-sm-12">
-                <div className="payment_info">
-                  <div className="card-header">
-                    <a
-                      className="card-link"
-                      data-toggle="collapse"
-                      href="#paymentCollapse"
-                    >
-                      3. Payment Information <i className="icofont-thin-down"></i>
-                    </a>
-                  </div>
-                  <div
-                    id="paymentCollapse"
-                    className="collapse show"
-                    data-parent="#accordion"
-                  >
-                    <div className="payment_card">
-                      <div className="payment_grid">
-                        <input
-                          type="radio"
-                          name="payment"
-                          value="1"
-                          id="card-payment"
-                          className="card-payment"
-                        />
-                        <label for="card-payment">Card</label>
-                      </div>
-                      <div className="payment_grid">
-                        <input
-                          type="radio"
-                          name="payment"
-                          value="2"
-                          id="cash-payment"
-                          className="cash-payment"
-                        />
-                        <label for="cash-payment">Cash</label>
-                      </div>
-                      <div className="payment_grid">
-                        <input
-                          type="radio"
-                          name="payment"
-                          value="3"
-                          id="paypal"
-                          className="paypal"
-                        />
-                        <label for="paypal">Paypal</label>
-                      </div>
-                      <div className="payment_grid">
-                        <input
-                          type="radio"
-                          name="payment"
-                          value="4"
-                          id="wallet"
-                          className="wallet"
-                        />
-                        <label for="wallet">Wallet</label>
                       </div>
                     </div>
 
-                    <form className="payment_info_form" method="post">
-                      <div className="card_number">
-                        <h4>Card Number: </h4>
-                        <input
-                          className="con-field"
-                          name="cnumber"
-                          id="cnumber"
-                          type="text"
-                          placeholder="Card Number"
-                        />
+                    <div className="card card-sec mb-3">
+                      <div className="card-header">
+                        <a
+                        >
+                          Have a coupon or Vouchar or Gift card ? Coupon Code{" "}
+                        </a>
                       </div>
-                      <div className="expires_end">
-                        <h4> Expires End </h4>
-                        <div className="expires_month">
-                          <input
-                            className="con-field"
-                            name="emonth"
-                            id="emonth"
-                            type="text"
-                            placeholder="MM"
-                          />
-                        </div>
-                        <div className="expires_year">
-                          <input
-                            className="con-field"
-                            name="eyear"
-                            id="eyear"
-                            type="text"
-                            placeholder="YY"
-                          />
-                        </div>
-                        <div className="expires_cvc">
-                          <input
-                            className="con-field"
-                            name="ecvc"
-                            id="ecvc"
-                            type="text"
-                            placeholder="CVC: 311"
-                          />
+
+                      <div className="collapse show">
+                        <div className="card-body">
+                          <select
+                            onChange={(e) => {
+                              this.handleChangeCardType(e);
+                            }}
+                            value={card_type}
+                            name="card_type"
+                          >
+                            <option value={null}>Select</option>
+                            <option value="COUPON">Coupon</option>
+                            <option value="VOUCHER">Vouchar</option>
+                            <option value="GIFT_CARD">Gift Card</option>
+                          </select>
+                          <br />
+
+                          {card_type !== "" ? (
+                            <div className="form-col form-col-sec mt-2">
+                              <input
+                                type="text"
+                                name="card_code"
+                                value={card_code}
+                                onChange={(e) => {
+                                  this.handleChange(e);
+                                }}
+                                placeholder="Code"
+                              ></input>
+                              <button onClick={() => this.onApplyCode()}>
+                                Apply
+                              </button>
+                            </div>
+                          ) : null}
                         </div>
                       </div>
-                      <div className="pay_btn">
-                        <input type="submit" className="submit" value="submit" />
+                    </div>
+                    {order_type === "DELIVERY" ? (
+                      <div className="checkout-option checkout-optionsec mb-0">
+                        <div className="card card-sec">
+                          <h4
+                            className="text-center"
+                            onClick={() =>
+                              this.setState({ showAddress: !showAddress })
+                            }
+                          >
+                            Would you like to change your delivery address ?
+                          </h4>
+                          <Collapse in={showAddress}>
+                            <form>
+                              <div className="form-col form-col-sec">
+                                <input
+                                  type="text"
+                                  name="postCode"
+                                  value={postCode}
+                                  onChange={(e) => {
+                                    this.handleChange(e);
+                                  }}
+                                  maxLength={6}
+                                  placeholder="Post Code"
+                                ></input>
+                                {/* <button>Confim</button> */}
+                              </div>
+
+                              <div className="form-col">
+                                <input
+                                  type="text"
+                                  name="mobile"
+                                  value={mobile}
+                                  onChange={(e) => {
+                                    this.handleChange(e);
+                                  }}
+                                  placeholder="Contact Number"
+                                ></input>
+                              </div>
+                              <div className="form-col">
+                                <input
+                                  type="text"
+                                  name="city"
+                                  value={city}
+                                  onChange={(e) => {
+                                    this.handleChange(e);
+                                  }}
+                                  placeholder="Town / City"
+                                ></input>
+                              </div>
+                              <div className="form-col mb-0">
+                                <textarea
+                                  name="address"
+                                  value={address}
+                                  placeholder="Address"
+                                  onChange={(e) => {
+                                    this.handleChange(e);
+                                  }}
+                                ></textarea>
+                              </div>
+                            </form>
+                          </Collapse>
+                        </div>
                       </div>
-                    </form>
+                    ) : null}
+                  </div>
+                  <div className="checkout-content-col checkout-price-table">
+                    <h4 className="text-center">Order Summery</h4>
+                    <ul>
+                      <li className="priceTable-heading">
+                        <span className="srial-no">S.No.</span>
+                        <span className="item">Item</span>
+                        <span className="qty">Qty</span>
+                        <span className="price">Price</span>
+                      </li>
+                      {items && items.length
+                        ? items.map((itm, index) => {
+                          return (
+                            <li className="priceTable-list">
+                              <span className="srial-no">{index + 1}</span>
+                              <span className="item">{itm.name}</span>
+                              <span className="qty">{itm.quantity}</span>
+                              <span className="price">
+                                £ {parseFloat(itm.price).toFixed(2)}
+                              </span>
+                            </li>
+                          );
+                        })
+                        : null}
+                      <li>
+                        <p><span>Total Item Qty :</span> {items && items.length ? items.length : 0}</p>
+                        <p><span>Sub Total :</span> £ {sub_total}</p>
+                      </li>
+
+                    </ul>
                   </div>
                 </div>
-                {/* <!-- End: Sign in - --> */}
               </div>
-              {/* <!-- End: Col 3 /- --> */}
+
+              <div className="checkout-col">
+
+                <div className="checkout-heading">
+                  <h3>3. Payment & Place Order</h3>
+                </div>
+                <div className="checkout-content">
+                  <div className="checkout-content-col checkout-price-table checkout-payment">
+                    <div className="checkout-otheramount">
+                      <ul>
+
+                        {card_type && card_code && discount ? (
+                          <li>
+                            <span>Discount</span>
+                            <span>£ {discount}</span>
+                          </li>
+
+                        ) : null}
+                        {order_type === "DELIVERY" ? (
+                          <li>
+                            <span>Delivery Fee</span>
+                            <span>£ {delivery_charge}</span>
+                          </li>
+                        ) : null}
+                        <li>
+                          <span>Service Fee</span>
+                          <span>£ {service_charge}</span>
+                        </li>
+                      </ul>
+                    </div>
+
+                    {!showTip ? (
+                      <>
+
+                        <div className="tips-bag-col">
+                          <Row className="tips_titleOuter">
+                            <span className="tips_title">Tips</span>
+                          </Row>
+                          <div className="checkout-discount">
+                            <input
+                              type="text"
+                              name="tips"
+                              value={tips}
+                              maxLength={4}
+                              onChange={(e) => {
+                                this.handleChange(e);
+                              }}
+                              placeholder="Custome" className="input1"></input>
+                            <button
+                              onClick={() =>
+                                this.setState({
+                                  tipPercent: parseFloat(
+                                    (sub_total * 5) / 100
+                                  ).toFixed(0),
+                                  tips: 0,
+                                  grand_total:
+                                    Math.round(
+                                      (parseFloat(sub_total) +
+                                        parseFloat(service_charge) +
+                                        parseFloat(bagPrice) +
+                                        parseFloat(
+                                          order_type === "DELIVERY"
+                                            ? delivery_charge
+                                            : 0
+                                        ) +
+                                        parseFloat((sub_total * 5) / 100) -
+                                        parseFloat(discount)) *
+                                      100
+                                    ) / 100,
+                                })
+                              }
+                              className={
+                                this.state.tipparcent === 5
+                                  ? "active selectCard"
+                                  : "text1"
+                              }>£5%
+                              {parseFloat((sub_total * 5) / 100).toFixed(2)}
+                            </button>
+
+                            <button onClick={() =>
+                              this.setState({
+                                tipPercent: parseFloat(
+                                  (sub_total * 10) / 100
+                                ).toFixed(0),
+                                tips: 0,
+                                grand_total:
+                                  Math.round(
+                                    (parseFloat(sub_total) +
+                                      parseFloat(service_charge) +
+                                      parseFloat(bagPrice) +
+                                      parseFloat(
+                                        order_type === "DELIVERY"
+                                          ? delivery_charge
+                                          : 0
+                                      ) +
+                                      parseFloat((sub_total * 10) / 100) -
+                                      parseFloat(discount)) *
+                                    100
+                                  ) / 100,
+                              })
+                            }
+                              className={
+                                this.state.tipparcent === 10
+                                  ? "active selectCard"
+                                  : "text1"
+                              }>£10%
+                              {parseFloat((sub_total * 10) / 100).toFixed(2)}
+                            </button>
+
+                            <button onClick={() =>
+                              this.setState({
+                                tipPercent: parseFloat(
+                                  (sub_total * 15) / 100
+                                ).toFixed(0),
+                                tips: 0,
+                                grand_total:
+                                  Math.round(
+                                    (parseFloat(sub_total) +
+                                      parseFloat(service_charge) +
+                                      parseFloat(bagPrice) +
+                                      parseFloat(
+                                        order_type === "DELIVERY"
+                                          ? delivery_charge
+                                          : 0
+                                      ) +
+                                      parseFloat((sub_total * 15) / 100) -
+                                      parseFloat(discount)) *
+                                    100
+                                  ) / 100,
+                              })
+                            }
+                              className={
+                                this.state.tipparcent === 15
+                                  ? "active selectCard"
+                                  : "text1"
+                              }>£15%
+
+                              {parseFloat((sub_total * 15) / 100).toFixed(2)}
+                            </button>
+                            <button onClick={() =>
+                              this.setState({
+                                tipPercent: parseFloat(
+                                  (sub_total * 20) / 100
+                                ).toFixed(0),
+                                tips: 0,
+                                grand_total:
+                                  Math.round(
+                                    (parseFloat(sub_total) +
+                                      parseFloat(service_charge) +
+                                      parseFloat(bagPrice) +
+                                      parseFloat(
+                                        order_type === "DELIVERY"
+                                          ? delivery_charge
+                                          : 0
+                                      ) +
+                                      parseFloat((sub_total * 20) / 100) -
+                                      parseFloat(discount)) *
+                                    100
+                                  ) / 100,
+                              })
+                            }
+                              className={
+                                this.state.tipparcent === 20
+                                  ? "active selectCard"
+                                  : "text1"
+                              }>£20%
+                              {parseFloat((sub_total * 20) / 100).toFixed(2)}
+                            </button>
+                          </div>
+                        </div>
+                      </>
+
+                    ) : (null)
+                    }
+                    {
+                      !showBag ? (
+                        <>
+                          <div className="tips-bag-col">
+                            <Row className="tips_titleOuter">
+                              <span className="tips_title">Bag</span>
+                            </Row>
+                            <div className="checkout-discount">
+                              <input
+                                type="number"
+                                className="input1"
+                                name="bagqty"
+                                value={bagqty}
+                                onChange={(e) => this.onQuantityBags(e)} />
+                              <input
+                                type="number"
+                                className="input1 ml-2"
+                                name="bagPrice"
+                                value={bagPrice}
+                                readOnly />
+                            </div>
+                          </div>
+
+
+                        </>
+                      ) : null
+                    }
+
+                    <div className="checkout-total mt-2">
+                      <span>Total</span>
+                      <span>£ {parseFloat(grand_total).toFixed(2)}</span>
+                    </div>
+
+
+                    <PaymentCard
+                      {...this.props}
+                      onPlaceOrder={this.onPlaceOrder}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
-            {/* <!-- row /- --> */}
           </div>
-          {/* <!-- container /- --> */}
-        </section>
-        {/* <!-- End : Contact Section --> */}
+        </div>
       </>
     );
   }

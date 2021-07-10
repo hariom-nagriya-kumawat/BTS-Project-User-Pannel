@@ -1,6 +1,5 @@
 import React, { Component } from "react";
-import { Multiselect } from "multiselect-react-dropdown";
-import { Link } from "react-router-dom";
+import { toast } from "react-toastify";
 import { Collapse } from "react-bootstrap";
 class OrderComponent extends Component {
   constructor(props) {
@@ -157,8 +156,15 @@ class OrderComponent extends Component {
     return itemName;
   };
 
-  addCartData(item1, price) {
-    let addCartData = { item_id: item1._id, quantity: 1, price: price };
+  addCartData(item1, price, name) {
+    let addCartData = {
+      item_id: item1._id,
+      quantity: 1,
+      item: {
+        name: name,
+        online_price: price,
+      },
+    };
     if (item1.options && item1.options.length) {
       item1.options.map((itm, indd) => {
         addCartData[itm.name] = [];
@@ -176,15 +182,23 @@ class OrderComponent extends Component {
     });
   }
 
-  addCart = (Id, price) => {
+  addCart = (Id, price, name) => {
     let token = localStorage.getItem("token");
     if (token) {
-      this.props.saveCartData({ item_id: Id, quantity: 1, price: price });
+      this.props.saveCartData({
+        item_id: Id,
+        quantity: 1,
+        price: price,
+        name: name,
+      });
     } else {
       this.props.addCartWithOutLogin({
         item_id: Id,
         quantity: 1,
-        price: price,
+        item: {
+          name: name,
+          online_price: price,
+        },
       });
     }
   };
@@ -231,25 +245,33 @@ class OrderComponent extends Component {
     total =
       data.length &&
       data.reduce(function (acc, curr) {
-        return (acc = acc + curr.price ? curr.price : 0);
+        return (acc =
+          acc +
+          (curr.item && curr.item.online_price ? curr.item.online_price : 0));
       }, 0);
     return total;
   };
-  onQuantityChange = (e, Id, name, item) => {
+  onQuantityChange = (e, Id, name, data) => {
     const { target } = e;
     const { value } = target;
-    let price = item.price / item.quantity;
+    let price = data.item.online_price / data.quantity;
     this.props.updateCartData({
       [name]: Id,
-      quantity: value,
+      item_id: data.item_id,
+      quantity: parseInt(value),
       price: value * price,
     });
   };
   onGoProceedToCheckout = () => {
-    let viewCartData = localStorage.getItem("viewCartData");
-    let result = JSON.parse(viewCartData);
-    localStorage.setItem("viewCheckoutData", JSON.stringify(result));
-    localStorage.removeItem("viewCartData");
+    // let viewCartData = localStorage.getItem("viewCartData");
+    // let result = JSON.parse(viewCartData);
+    const { CartData } = this.props;
+    const { data } = CartData;
+    localStorage.setItem(
+      "viewCheckoutData",
+      JSON.stringify(data && data.length ? data : [])
+    );
+    // localStorage.removeItem("viewCartData");
     this.props.history.push("/checkout");
   };
   render() {
@@ -275,7 +297,6 @@ class OrderComponent extends Component {
       addCartData,
     } = this.state;
     const { data } = CartData;
-    console.log("data", data);
     return (
       <>
         <div className="inner-topbanner">
@@ -324,7 +345,7 @@ class OrderComponent extends Component {
               </li>
               <li className="search-filter">
                 <form>
-                  <div className="form-col">
+                  <div>
                     <input
                       type="text"
                       placeholder="What are you craving?"
@@ -474,7 +495,8 @@ class OrderComponent extends Component {
                                                     ? price
                                                     : item1.online_price
                                                     ? item1.online_price
-                                                    : 0
+                                                    : 0,
+                                                  item1.name
                                                 )
                                               }
                                             >
@@ -497,7 +519,8 @@ class OrderComponent extends Component {
                                                     ? price
                                                     : item1.online_price
                                                     ? item1.online_price
-                                                    : 0
+                                                    : 0,
+                                                  item1.name
                                                 )
                                               }
                                             >
@@ -559,7 +582,7 @@ class OrderComponent extends Component {
                                                                         itm1.name}
                                                                     </p>
                                                                     <span className="option_p w-25">
-                                                                      ${" "}
+                                                                      £{" "}
                                                                       {itm1.price &&
                                                                         itm1.price}
                                                                     </span>
@@ -638,7 +661,7 @@ class OrderComponent extends Component {
                       ItemsMargeData.map((itm, indx) => {
                         return (
                           <div
-                            className="tab-pane fade show active"
+                            className="tab-pane fade show active customtab-pane"
                             id="v-pills-one"
                             role="tabpanel"
                             aria-labelledby="v-pills-one-tab"
@@ -752,7 +775,8 @@ class OrderComponent extends Component {
                                                                 ? price
                                                                 : item1.online_price
                                                                 ? item1.online_price
-                                                                : 0
+                                                                : 0,
+                                                              item1.name
                                                             )
                                                           }
                                                         >
@@ -775,7 +799,8 @@ class OrderComponent extends Component {
                                                                 ? price
                                                                 : item1.online_price
                                                                 ? item1.online_price
-                                                                : 0
+                                                                : 0,
+                                                              item1.name
                                                             )
                                                           }
                                                         >
@@ -849,7 +874,7 @@ class OrderComponent extends Component {
                                                                                       itm1.name}
                                                                                   </p>
                                                                                   <span className="option_p w-25">
-                                                                                    ${" "}
+                                                                                    £{" "}
                                                                                     {itm1.price &&
                                                                                       itm1.price}
                                                                                   </span>
@@ -929,7 +954,7 @@ class OrderComponent extends Component {
                                                         return (
 
 
-                                                          <a className="nav-link rounded-pill" id={`v-pills-${itm._id}-${item1._id}-tab`} data-toggle="pill" href={`#v-pills-${itm._id}-${item1._id}`} role="tab" aria-controls={`v-pills-${itm._id}-${item1._id}`} aria-selected="true"
+                                                          <a className="nav-link rounded-pill" id={`v-pills-£{itm._id}-£{item1._id}-tab`} data-toggle="pill" href={`#v-pills-£{itm._id}-£{item1._id}`} role="tab" aria-controls={`v-pills-£{itm._id}-£{item1._id}`} aria-selected="true"
                                                           >
                                                             {itm.name}
                                                           </a>
@@ -944,7 +969,7 @@ class OrderComponent extends Component {
                                                         return (
                                                           <div
                                                             className="tab-pane fade show"
-                                                            id={`v-pills-${itm._id}-${item1._id}`} role="tabpanel" aria-labelledby={`v-pills-${itm._id}-${item1._id}-tab`}
+                                                            id={`v-pills-£{itm._id}-£{item1._id}`} role="tabpanel" aria-labelledby={`v-pills-£{itm._id}-£{item1._id}-tab`}
                                                           >
                                                             <table>
                                                               {itm.attributes && itm.attributes.length ? itm.attributes.map((it) => {
@@ -1018,7 +1043,7 @@ class OrderComponent extends Component {
                                 return (
                                   <tr key={ind}>
                                     <td className="item-name">
-                                      {i.item_id && this.getItemName(i.item_id)}
+                                      {i.item && i.item.name}
                                     </td>
                                     <td className="item-qty">
                                       <div className="menu-cart-qty">
@@ -1045,7 +1070,10 @@ class OrderComponent extends Component {
                                       </div>
                                     </td>
                                     <td className="item-price text-right">
-                                      £ {i.price}
+                                      £{" "}
+                                      {i.item && i.item.online_price
+                                        ? i.item.online_price
+                                        : 0}
                                     </td>
                                     <td className="text-center">
                                       <div
